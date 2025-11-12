@@ -6,6 +6,8 @@ A long-term memory Claude Code plugin that learns from your activity and continu
 - **Reflection**: Performs reflection across multiple diary entries
 - **Memory**: Reflection updates your `CLAUDE.md` with actionable rules
 
+<img width="1024" height="1024" alt="ff5b3bad-ac63-41cd-ba95-ff9818ccc663" src="https://github.com/user-attachments/assets/250eae6a-9652-41c2-a9e5-cc0ba8554026" />
+
 ## Quickstart 
 
 1. **Clone this repository**:
@@ -34,11 +36,7 @@ chmod +x ~/.claude/hooks/pre-compact.sh
 
 ## Overview
 
-The `CLAUDE.md` files serve as [memory](https://code.claude.com/docs/en/memory) for Claude Code. But, they are updated manually (e.g., via the `#` shortcut or `/memory` command). This plugin automates the process of creating and saving memories to `CLAUDE.md`. 
-
-It is inspired by [an interview between Dan Shipper and Cat Wu / Boris Cherny from the Claude Code team](https://www.youtube.com/watch?v=IDSAMqip6ms&t=352s), which discusses creating a feedback loop where Claude learns from sessions and automatically updates its memory.
-
-The technical approach is borrowed from the [Generative Agents paper](https://arxiv.org/pdf/2304.03442), which introduces a memory architecture with three key components:
+The `CLAUDE.md` files serve as [memory](https://code.claude.com/docs/en/memory) for Claude Code. But, they are updated manually (e.g., via the `#` shortcut or `/memory` command). This plugin automates the process of creating and saving memories to `CLAUDE.md`. It is inspired by [an interview between Dan Shipper and Cat Wu / Boris Cherny from the Claude Code team](https://www.youtube.com/watch?v=IDSAMqip6ms&t=352s), which discusses creating a feedback loop where Claude learns from sessions and automatically updates its memory. The approach is borrowed from the [Generative Agents paper](https://arxiv.org/pdf/2304.03442), which introduces a memory architecture with three key components:
 
 1. **Observations**: Raw experiences recorded in natural language (like our diary entries)
 2. **Reflection**: Synthesizing observations into higher-level insights and patterns (like our `/reflect` command)
