@@ -12,7 +12,7 @@ A long-term memory Claude Code plugin that learns from your activity and continu
 
 1. **Clone this repository**:
 ```bash
-git clone <repository-url> claude-diary
+git clone https://github.com/rlancemartin/claude-diary claude-diary
 cd claude-diary
 ```
 
@@ -57,6 +57,32 @@ Each Claude Code session is logged to `~/.claude/projects/...` in JSONL format. 
 - ✅ After key decisions or breakthroughs
 - ✅ Before switching projects
 - ✅ Anytime you want to capture learnings
+
+#### How the Diary Command Works
+
+The `/diary` command uses a streamlined 3-step process:
+
+**Step 1: Locate Transcript (1 bash command)**
+- Converts current directory to hash format (`/Users/name/Code/app` → `-Users-name-Code-app`)
+- Finds most recent `.jsonl` file in `~/.claude/projects/[hash]/`
+- Reports file location and size
+
+**Step 2: Extract Data (1 batched bash command)**
+- Runs a single comprehensive command that extracts:
+  - Git branch and timestamp
+  - User messages (first 5 + last 3 for context)
+  - Tool usage counts (Edit, Read, Write, etc.)
+  - Modified file paths
+  - Git operations
+  - Any errors encountered
+- Uses strategic sampling for large sessions (>1MB)
+
+**Step 3: Generate & Save Entry**
+- Creates structured markdown with all sections
+- Saves to `~/.claude/memory/diary/YYYY-MM-DD-session-N.md`
+- Confirms completion with summary
+
+**Key optimization:** By batching all extraction into a single bash command, the diary command only requires 2-3 total bash calls instead of 10+, avoiding approval prompts and completing much faster.
 
 ### Reflection
 
@@ -240,6 +266,19 @@ Each transcript is in JSONL format (JSON Lines) containing:
 - File operations
 - Error messages
 - Git operations
+
+**How `/diary` locates the current session:**
+1. Gets the current working directory from Claude Code
+2. Base64-encodes the path to match Claude's storage format
+3. Finds the most recently modified `.jsonl` file in that project's directory
+4. The newest file is always the current (or just-ended) session
+
+Example:
+```bash
+# Current directory: /Users/name/Code/my-project
+# Encoded path: L1VzZXJzL25hbWUvQ29kZS9teS1wcm9qZWN0
+# Most recent file: ~/.claude/projects/L1VzZXJzL25hbWUvQ29kZS9teS1wcm9qZWN0/abc-123.jsonl
+```
 
 The `/diary` command parses these transcripts using `jq` (JSON processor) to create structured memory entries. See the diary command documentation for detailed jq usage examples and parsing strategies.
 

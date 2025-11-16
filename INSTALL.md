@@ -17,7 +17,7 @@ This method allows you to manage the plugin like any other Claude Code plugin.
 1. **Clone or download this repository**:
    ```bash
    cd ~/Desktop/Code  # or wherever you keep your code
-   git clone <repository-url> cc-memory
+   git clone https://github.com/rlancemartin/claude-diary cc-memory
    # OR download and extract the ZIP file
    ```
 

@@ -4,5 +4,9 @@
   "version": "1.0.0",
   "author": {
     "name": "rlm"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rlancemartin/claude-diary"
   }
 }
