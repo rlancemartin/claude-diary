@@ -46,106 +46,49 @@ Our implementation applies this architecture to Claude Code: diary entries captu
 
 ### Diary Entries
 
-Each Claude Code session is logged to `~/.claude/projects/...` in JSONL format. The `/diary` command parses these transcripts and creates structured diary entries. See [diary.md](commands/diary.md) for details.
+The `/diary` command creates structured diary entries from the current session. It uses a context-first approach, reflecting on the conversation already in Claude Code's context. It only falls back to parsing JSONL transcripts when context is insufficient (e.g., after session compaction). See [diary.md](commands/diary.md) for details. The `diary` command can be run in two ways:
 
-**Two ways to create entries:**
 1. **Automatic**: PreCompact hook runs before conversation compacts (long sessions, 200+ messages)
-2. **Manual**: Run `/diary` anytime to capture current session
-
-**When to manually run `/diary`:**
-- ✅ At the end of important work sessions
-- ✅ After key decisions or breakthroughs
-- ✅ Before switching projects
-- ✅ Anytime you want to capture learnings
+2. **Manual**: Run `/diary` anytime to capture important context in the current session
 
 #### How the Diary Command Works
 
-The `/diary` command uses a streamlined 3-step process:
+**Primary approach (most sessions):**
+- Reflects on current conversation in memory
+- No JSONL parsing needed
+- Captures design decisions, user preferences, PR feedback, challenges, and solutions
+- Zero tool calls for typical sessions
 
-**Step 1: Locate Transcript (1 bash command)**
-- Converts current directory to hash format (`/Users/name/Code/app` → `-Users-name-Code-app`)
-- Finds most recent `.jsonl` file in `~/.claude/projects/[hash]/`
-- Reports file location and size
+**Fallback approach (compacted sessions):**
+- Only used when context is insufficient
+- Locates JSONL transcript file in the project's directory 
+- Extracts metadata (tool counts, files modified)
+- Faster than previous implementations
 
-**Step 2: Extract Data (1 batched bash command)**
-- Runs a single comprehensive command that extracts:
-  - Git branch and timestamp
-  - User messages (first 5 + last 3 for context)
-  - Tool usage counts (Edit, Read, Write, etc.)
-  - Modified file paths
-  - Git operations
-  - Any errors encountered
-- Uses strategic sampling for large sessions (>1MB)
-
-**Step 3: Generate & Save Entry**
-- Creates structured markdown with all sections
-- Saves to `~/.claude/memory/diary/YYYY-MM-DD-session-N.md`
-- Confirms completion with summary
-
-**Key optimization:** By batching all extraction into a single bash command, the diary command only requires 2-3 total bash calls instead of 10+, avoiding approval prompts and completing much faster.
+**Output:**
+- Structured markdown entry saved to `~/.claude/memory/diary/YYYY-MM-DD-session-N.md`
+- Includes: task summary, work done, design decisions, user preferences, challenges, solutions
 
 ### Reflection
 
-The `reflect` command is used to analyze the diary entries and create a reflection document. You can see the rules for the `reflect` command in the [reflect.md](commands/reflect.md) file. This then writes update to the `CLAUDE.md` file.
+The `/reflect` command analyzes diary entries to identify patterns and automatically updates `CLAUDE.md`. See [reflect.md](commands/reflect.md) for details. The `reflect` command can be run in one way currently:
 
-Run `/reflect` when:
-- ✅ You have 5-10+ diary entries accumulated
-- ✅ You want to identify patterns in a specific area (e.g., testing, React)
-- ✅ You're switching projects and want to capture learnings
-- ✅ Monthly or weekly as a regular practice
-- ✅ Your `CLAUDE.md` feels incomplete or outdated
+**Manual**: Run `/reflect` anytime to have diary entries accumulated and want to update the `CLAUDE.md` file with the new learnings.
 
-## How It Works (Automated Flow)
+**Key features:**
+- Identifies patterns appearing 2+ times across sessions
+- Detects violations of existing CLAUDE.md rules (strengthens them)
+- Tracks processed entries in `processed.log` (avoids re-analysis)
+- Automatically appends actionable rules to CLAUDE.md
+- Generates reflection document with insights
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  1. Work with Claude Code normally                          │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  2. Diary entries created (automatic or manual)             │
-│     → PreCompact hook: auto-generates (long sessions)       │
-│     → Manual: run /diary anytime                            │
-│     → Saved to ~/.claude/memory/diary/                      │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  3. Entries accumulate (5-10+ recommended)                  │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  4. Run /reflect (ad hoc, weekly/monthly)                   │
-│     → Analyzes unprocessed entries                          │
-│     → Identifies patterns (2+ occurrences)                  │
-│     → Automatically updates CLAUDE.md                       │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  5. Future sessions use updated rules                       │
-│     → Cycle repeats, Claude gets smarter                    │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### What Gets Captured
-
-**Diary entries capture:**
-- Design decisions and architectural choices
-- PR feedback and code quality patterns
-- User preferences (commit style, testing, workflow)
-- Challenges and solutions
-- Technologies and code patterns
-
-**Reflection identifies patterns (2+ occurrences):**
-- Persistent preferences → actionable CLAUDE.md rules
-- Successful approaches → design decision templates
+**Patterns extracted:**
+- Persistent preferences → CLAUDE.md rules
+- Successful approaches → design templates
 - Anti-patterns → things to avoid
-- Project-specific conventions → context-aware rules
+- Rule violations → strengthened rules
 
-### Reflect Command Options
+#### Reflect Command Options
 
 ```bash
 # Analyze last 20 unprocessed entries
@@ -170,64 +113,6 @@ Run `/reflect` when:
 /reflect reprocess 2025-11-07-session-1.md
 ```
 
-### Example
-
-Here's how the system learns in practice:
-
-**Week 1: Sessions Accumulate**
-```
-Session 1: You work on React app, use conventional commits
-  → Diary created: 2025-11-01-session-1.md
-
-Session 2: PR reviewer says "add test coverage"
-  → Diary created: 2025-11-02-session-1.md
-
-Session 3: You use conventional commits again
-  → Diary created: 2025-11-03-session-1.md
-
-Session 4: PR reviewer says "code looks AI-generated, simplify"
-  → Diary created: 2025-11-04-session-1.md
-
-Session 5: You use conventional commits + run tests before commit
-  → Diary created: 2025-11-05-session-1.md
-```
-
-**Week 1 End: Run Reflection**
-```bash
-$ /reflect
-
-Analyzing 5 unprocessed diary entries...
-
-Patterns identified:
-✅ Conventional commit format (5/5 sessions) → Strong pattern
-✅ Test coverage requested (2/5 sessions) → Pattern
-✅ Avoid verbose/AI-looking code (1/5 sessions) → Noted
-
-Reflection created: 2025-11-reflection-1.md
-CLAUDE.md updated with 3 new rules:
-  - git commits: use conventional format (feat:, fix:, refactor:)
-  - testing: add test coverage for new features
-  - code style: avoid verbose patterns, match existing code
-
-processed.log updated: 5 entries marked as analyzed
-```
-
-**Week 2+: Claude Adapts**
-
-In all future sessions, Claude now:
-- ✅ Automatically uses conventional commit format
-- ✅ Suggests adding tests for new features
-- ✅ Writes simpler, less verbose code
-
-**Month 2: More Learning**
-```
-10 more sessions → 10 more diary entries
-Run /reflect again → Identifies new patterns
-CLAUDE.md grows → Claude gets even smarter
-```
-
-**The Result**: Over time, Claude learns your exact preferences, coding style, and workflow patterns without you having to repeat yourself.
-
 ## Directory Structure
 
 The plugin creates and uses these directories:
@@ -251,36 +136,6 @@ The plugin creates and uses these directories:
 These directories are automatically created on first use.
 
 **processed.log format**: `[diary-entry] | [reflection-date] | [reflection-file]`
-
-### Session Transcripts
-
-Claude Code stores full conversation transcripts at:
-```
-~/.claude/projects/[encoded-project-path]/[session-uuid].jsonl
-```
-
-Each transcript is in JSONL format (JSON Lines) containing:
-- User messages
-- Assistant responses
-- Tool invocations and results
-- File operations
-- Error messages
-- Git operations
-
-**How `/diary` locates the current session:**
-1. Gets the current working directory from Claude Code
-2. Base64-encodes the path to match Claude's storage format
-3. Finds the most recently modified `.jsonl` file in that project's directory
-4. The newest file is always the current (or just-ended) session
-
-Example:
-```bash
-# Current directory: /Users/name/Code/my-project
-# Encoded path: L1VzZXJzL25hbWUvQ29kZS9teS1wcm9qZWN0
-# Most recent file: ~/.claude/projects/L1VzZXJzL25hbWUvQ29kZS9teS1wcm9qZWN0/abc-123.jsonl
-```
-
-The `/diary` command parses these transcripts using `jq` (JSON processor) to create structured memory entries. See the diary command documentation for detailed jq usage examples and parsing strategies.
 
 ## Contributing
 
