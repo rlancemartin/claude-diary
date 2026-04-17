@@ -237,7 +237,41 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
 
 ## Proposed CLAUDE.md Updates
 
-**CRITICAL FORMAT REQUIREMENTS**:
+### CRITICAL: The High-Value Bar for CLAUDE.md
+
+CLAUDE.md is loaded into EVERY session. Every rule you add is a tax on every future interaction. Most "learnings" don't clear that bar.
+
+Before proposing ANY rule for global CLAUDE.md, it must pass BOTH tests:
+
+**Test 1 — Hard-won?**
+Would the user genuinely burn >30 minutes rediscovering this? Or could it be figured out on the fly from docs / a quick search / one failed run?
+
+- KEEP: "never fabricate URLs" (cost real production outage)
+- KEEP: "use agents for complex tasks" (changes workflow approach)
+- CUT: "sys.executable over 'python'" (first failure tells you)
+- CUT: "bash subshell can't mutate parent arrays" (known bash fact)
+- CUT: "rename repo over new repo" (common sense)
+
+**Test 2 — Broadly applicable?**
+Does this apply in a meaningful fraction of sessions? Or only in rare specific contexts that deserve a scoped home?
+
+- KEEP in global: git/commit style, agent-first methodology, honest pushback, testing philosophy — every session touches these
+- MOVE to tech-rules.md (or equivalent on-demand file): anything technology-specific (Rust, SQLite, Puppeteer, LLM eval) — loaded when relevant
+- MOVE to project CLAUDE.md: codebase-specific conventions
+- CUT entirely: rare-event rules (open-sourcing a repo, cutting a release) — capture in the reflection document as context, don't load every session
+
+**Default action: CUT.** If a rule is on the fence, it doesn't belong in global CLAUDE.md. Better to under-add than to bloat every session's context. The reflection document itself is the durable record — rules promoted to CLAUDE.md are the unusual few that earn their keep.
+
+**When presenting proposed rules**, explicitly justify each one against both tests. If you can't articulate why it clears the bar, drop it. Format each proposal with a one-line justification, e.g.:
+
+```markdown
+- never fabricate URLs — T1: caused prod outage (hard-won). T2: applies to any session that writes external links (broad).
+```
+
+Rules that fail either test belong in the reflection document's "One-Off Observations" or "Notable Mistakes and Learnings" sections, NOT in the Proposed CLAUDE.md Updates section.
+
+### Format Requirements
+
 - CLAUDE.md is read into EVERY session, so keep updates **succinct and non-verbose**
 - Use bullet points (-, +, or numbered lists)
 - Be direct and actionable (imperative tone)
