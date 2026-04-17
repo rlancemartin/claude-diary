@@ -19,7 +19,11 @@ Several anti-patterns were also identified through repeated challenges: avoid mu
 
 ## Patterns Identified
 
-### Persistent Preferences (3+ occurrences)
+### A. PR Review Feedback Patterns
+
+[No PR review feedback documented in these sessions]
+
+### B. Persistent Preferences (2+ occurrences; 3+ = high confidence)
 
 #### 1. **TypeScript Strict Mode** (appeared in 8/10 entries)
    - **Observation**: User consistently enables and enforces TypeScript strict mode across all projects
@@ -102,49 +106,37 @@ Several anti-patterns were also identified through repeated challenges: avoid mu
      - Prefer composition over duplication
      ```
 
-### Project-Specific Patterns
+### C. Design Decisions That Worked
 
-#### 1. **React State Management** (for React projects)
+[See "Effective Approaches" section below]
+
+### D. Anti-Patterns to Avoid (2+ occurrences; 3+ = high confidence)
+
+[See anti-patterns section below]
+
+### E. Efficiency Lessons
+
+[No specific efficiency lessons documented in these sessions]
+
+### F. Project-Specific Patterns
+
+#### 1. **React State Management** (for ~/Code/my-react-app)
    - **Observation**: User prefers React Context for global state, useState/useReducer for local state
    - **Context**: Only applies to React projects
-   - **Evidence**: Sessions 1, 2, 5, 10 used Context; never mentioned Redux or Zustand
-   - **Proposed CLAUDE.md rule**:
-     ```markdown
-     For React state management:
-     - Use React Context for global state (auth, theme, etc.)
-     - Use useState for simple local state
-     - Use useReducer for complex local state
-     - Avoid Redux unless explicitly requested
-     - Create custom hooks to consume contexts
-     ```
+   - **Target file**: `~/Code/my-react-app/CLAUDE.md`
+   - **Rule to add**: `- state management: use Context for global state, useState/useReducer for local; avoid Redux unless requested`
 
-#### 2. **CLI Tool Structure** (for Node.js CLI projects)
+#### 2. **CLI Tool Structure** (for ~/Code/cli-tool)
    - **Observation**: User prefers Commander.js for CLI parsing and consistent project structure
    - **Context**: Only applies to CLI tool projects
-   - **Evidence**: Session 4 and Session 9 (both CLI projects) used Commander.js
-   - **Proposed CLAUDE.md rule**:
-     ```markdown
-     For CLI tool projects:
-     - Use Commander.js for argument parsing
-     - Structure: src/commands/ for command implementations
-     - Use chalk for colored output
-     - Implement --help and --version flags
-     - Include error exit codes
-     ```
+   - **Target file**: `~/Code/cli-tool/CLAUDE.md`
+   - **Rule to add**: `- CLI structure: Commander.js for parsing, src/commands/ for implementations, chalk for colors`
 
-#### 3. **Data Pipeline Error Recovery** (for data processing projects)
+#### 3. **Data Pipeline Error Recovery** (for ~/Code/data-pipeline)
    - **Observation**: User wants retry logic and graceful degradation in data pipelines
-   - **Context**: Specific to data processing/ETL projects
-   - **Evidence**: Session 7 (data pipeline) implemented retry logic with exponential backoff
-   - **Confidence**: Low (only 1 session, but worth noting for future)
-   - **Proposed CLAUDE.md rule**:
-     ```markdown
-     For data pipeline projects:
-     - Implement retry logic with exponential backoff for transient failures
-     - Add circuit breakers for external service calls
-     - Log all errors with context (record ID, step, error details)
-     - Continue processing other records when one fails (when appropriate)
-     ```
+   - **Context**: Specific to data processing/ETL projects (emerging - only 1 occurrence)
+   - **Target file**: `~/Code/data-pipeline/CLAUDE.md`
+   - **Rule to add**: `- error handling: retry with exponential backoff, circuit breakers for external services, continue on partial failures`
 
 ### Effective Approaches
 
@@ -251,94 +243,63 @@ These preferences appeared only once, so they're not patterns yet, but worth tra
 
 ## Proposed CLAUDE.md Updates
 
-Below are proposed additions to your `~/.claude/CLAUDE.md` file. **Review these carefully before adding them.**
+### GLOBAL Rules (for `~/.claude/CLAUDE.md`)
 
-### Section: TypeScript Configuration
+Below are proposed additions to your global CLAUDE.md file.
+
+#### Section: TypeScript
 
 ```markdown
-## TypeScript Standards
-- Always enable strict mode in tsconfig.json
-- Never use 'any' types - use 'unknown' or define proper types
-- Require explicit return types on all functions
-- Enable all strict compiler options:
-  - strictNullChecks
-  - strictFunctionTypes
-  - strictBindCallApply
-  - noImplicitAny
-- Use type guards when narrowing from 'unknown'
+- TypeScript: always enable strict mode; never use 'any' (use 'unknown' or proper types)
+- TypeScript: require explicit return types on all functions
 ```
 
-### Section: React Best Practices
+#### Section: React
 
 ```markdown
-## React Development Standards
-
-### Component Style
-- Use functional components exclusively with hooks
-- Never suggest or create class components
-- Prefer custom hooks for reusable stateful logic
-- Always include all dependencies in useEffect
-
-### State Management
-- Use React Context for global state (authentication, theme, user preferences)
-- Use useState for simple local state
-- Use useReducer for complex local state with multiple related values
-- Create custom hooks to consume contexts (e.g., useAuth, useTheme)
-- Avoid Redux unless explicitly requested
-
-### State Updates
-- Never mutate state directly - always create new references
-- Use spread operator for objects: setState({ ...state, newProp: value })
-- Use array methods that return new arrays: map, filter, concat
-- Avoid array methods that mutate: push, pop, splice
+- React: use functional components with hooks exclusively; never class components
+- React: always include all dependencies in useEffect arrays
+- React: never mutate state directly; use spread operator or array methods that return new arrays
 ```
 
-### Section: Error Handling
+#### Section: Error Handling
 
 ```markdown
-## Error Handling Standards
-- Wrap all async operations in try-catch blocks
-- Never use empty catch blocks
-- Always log errors with console.error (or appropriate logger)
-- Include error context: what operation failed, relevant IDs, user actions
-- Surface user-facing errors in the UI with clear messages
-- For API errors, provide actionable next steps to users
+- error handling: wrap async operations in try-catch; never use empty catch blocks
+- error handling: always log errors with context (operation, IDs, user actions)
 ```
 
-### Section: Code Quality
+#### Section: Testing & Quality
 
 ```markdown
-## Code Quality Standards
-
-### Testing
-- Always run the test suite before committing
-- Ensure all tests pass before creating commits
-- If tests fail, fix them or update them as needed
-- Never commit code with failing tests
-
-### DRY Principle
-- Extract repeated logic into functions or custom hooks
-- Create utility functions for operations used in 3+ places
-- Use custom hooks for reusable stateful logic in React
-- Prefer composition and reuse over duplication
-
-### Code Organization
-- Separate concerns: contexts, hooks, components, utilities in different files
-- Use clear, descriptive naming (no abbreviations unless standard)
-- Group related functionality in directories
-- Keep files focused on a single responsibility
+- testing: run test suite before committing; never commit with failing tests
+- DRY: extract repeated logic into functions/hooks when used 3+ places
 ```
 
-### Section: Project-Specific - CLI Tools
+### PROJECT-SPECIFIC Rules (for project CLAUDE.md files)
+
+Below are rules that apply ONLY to specific projects.
+
+#### Project: ~/Code/my-react-app
+**Target file**: `~/Code/my-react-app/CLAUDE.md`
 
 ```markdown
-## CLI Tool Standards (for Node.js CLI projects)
-- Use Commander.js for command-line argument parsing
-- Structure: src/commands/ directory for command implementations
-- Use chalk for colored terminal output
-- Always implement --help and --version flags
-- Return appropriate exit codes (0 for success, non-zero for errors)
-- Validate required arguments and provide clear error messages
+- state management: use Context for global state, useState/useReducer for local; avoid Redux unless requested
+```
+
+#### Project: ~/Code/cli-tool
+**Target file**: `~/Code/cli-tool/CLAUDE.md`
+
+```markdown
+- CLI structure: Commander.js for parsing, src/commands/ for implementations, chalk for colors
+- CLI: always implement --help and --version flags; return proper exit codes
+```
+
+#### Project: ~/Code/data-pipeline
+**Target file**: `~/Code/data-pipeline/CLAUDE.md`
+
+```markdown
+- error handling: retry with exponential backoff, circuit breakers for external services
 ```
 
 ## Metadata

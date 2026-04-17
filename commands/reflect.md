@@ -37,7 +37,7 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
    - If project filter specified: only include entries where the Project field matches
    - If pattern filter specified: only include entries that mention the keyword in any section
 
-3. **Read and parse filtered diary entries**:
+4. **Read and parse filtered diary entries**:
    - Read each diary entry file
    - Extract information from all sections
    - Pay special attention to:
@@ -45,16 +45,21 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
      - Code Patterns and Decisions
      - Solutions Applied (what works well)
      - Challenges Encountered (what to avoid)
+   - **If a section is missing**: Skip that section (don't fail), and note in Metadata which entries had incomplete structure
 
-4. **Create the reflections directory** (if it doesn't exist):
+5. **Create the reflections directory** (if it doesn't exist):
    - Directory: `~/.claude/memory/reflections/`
    - Use `mkdir -p` to create it automatically
 
-5. **Read current CLAUDE.md to check for existing rules**:
-   - Read `~/.claude/CLAUDE.md` to understand what rules already exist
-   - This is CRITICAL for the next step
+6. **Read current CLAUDE.md files to check for existing rules**:
+   - Read `~/.claude/CLAUDE.md` to understand what global rules already exist
+   - **For each unique project** found in diary entries:
+     - Check if `[project-path]/CLAUDE.md` exists
+     - If it exists, read it to understand existing project-specific rules
+     - Note which projects have CLAUDE.md files and which don't
+   - This is CRITICAL for avoiding duplicates and detecting conflicts
 
-6. **Analyze entries for patterns AND rule violations**:
+7. **Analyze entries for patterns AND rule violations**:
    - **Frequency analysis**: What preferences/patterns appear in multiple entries?
    - **Consistency check**: Are preferences consistent or contradictory?
    - **Context awareness**: Do patterns apply globally or to specific project types?
@@ -68,7 +73,24 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
      - Example: CLAUDE.md says "no AI attribution" but diary shows "User corrected: Don't add Claude attribution"
      - These violations mean the existing rule needs STRENGTHENING (more explicit, moved to top, zero tolerance language)
 
-7. **Synthesize insights** organized by category:
+   - **CRITICAL - Global vs Project-Specific Classification**:
+     For each pattern identified, classify it as GLOBAL or PROJECT-SPECIFIC:
+
+     **GLOBAL rules** (go in `~/.claude/CLAUDE.md`):
+     - Apply across ALL projects (error handling, commit style, agent usage)
+     - Are about the user's general workflow preferences
+     - Are technology-agnostic or apply to multiple projects
+     - Examples: "use conventional commits", "never swallow exceptions", "use agents for complex tasks"
+
+     **PROJECT-SPECIFIC rules** (go in project's own CLAUDE.md):
+     - Only apply to ONE specific project or technology stack
+     - Are about patterns unique to that codebase
+     - Would be confusing or wrong if applied elsewhere
+     - Examples: Framework-specific patterns, codebase conventions, tool-specific configurations
+
+     **How to decide**: Ask "Would this rule make sense in a completely different project?" If NO → project-specific.
+
+8. **Synthesize insights** organized by category:
 
    **CRITICAL**: Focus on extracting concise, actionable rules suitable for CLAUDE.md (which is read into every session).
 
@@ -83,7 +105,7 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
    - What reviewers appreciate vs. criticize
    - Patterns in "looks AI-generated" feedback
 
-   **B. Persistent Preferences** (appear 2+ times):
+   **B. Persistent Preferences** (2+ occurrences; 3+ = high confidence):
    - Commit and PR style requirements
    - Code organization and structure
    - Testing and linting workflows
@@ -96,7 +118,7 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
    - Patterns that led to clean, maintainable code
    - Decision-making frameworks that helped
 
-   **D. Anti-Patterns to Avoid** (caused problems 2+ times):
+   **D. Anti-Patterns to Avoid** (2+ occurrences; 3+ = high confidence):
    - Approaches that failed or needed rework
    - Common mistakes that waste time
    - What NOT to do and why
@@ -113,7 +135,13 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
    - Technology-specific preferences
    - Framework-specific conventions
 
-8. **Generate a reflection document** with this structure:
+9. **Generate a reflection document** with this structure:
+
+   **Scope guidance** (for large analyses):
+   - If analyzing >20 entries, group similar patterns to avoid repetition
+   - Focus on highest-confidence patterns (3+ occurrences) first
+   - Limit detailed examples to 3 per pattern
+   - Target length: 300-800 lines (adjust based on pattern density)
 
 ```markdown
 # Reflection: [Date Range or "Last N Entries"]
@@ -127,7 +155,7 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
 [2-3 paragraph overview of key insights discovered across these entries]
 
 ## CRITICAL: Rule Violations Detected
-[ONLY include this section if violations of existing CLAUDE.md rules were found]
+[ONLY include this section if violations were found. If NO violations detected, OMIT this entire section including the header.]
 
 **Rule**: [The existing CLAUDE.md rule that was violated]
 **Violation Pattern**: [How it appeared in diary entries - quote specific examples]
@@ -151,7 +179,7 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
    - **Lesson**: [What to do/avoid]
    - **CLAUDE.md rule**: `- [succinct actionable rule]`
 
-### B. Persistent Preferences (2+ occurrences)
+### B. Persistent Preferences (2+ occurrences; 3+ = high confidence)
 [Recurring user preferences across sessions]
 
 1. **[Preference Name]** (appeared in X/Y entries)
@@ -169,8 +197,8 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
    - **When to use**: [Context/applicability]
    - **CLAUDE.md rule** (if generalizable): `- [succinct rule]`
 
-### D. Anti-Patterns to Avoid
-[Things that failed or caused problems 2+ times]
+### D. Anti-Patterns to Avoid (2+ occurrences; 3+ = high confidence)
+[Things that failed or caused problems multiple times]
 
 1. **[Anti-pattern Name]** (appeared in X/Y entries)
    - **What didn't work**: [Brief description]
@@ -188,12 +216,13 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
    - **CLAUDE.md rule** (if applicable): `- [succinct rule]`
 
 ### F. Project-Specific Patterns
-[Patterns that apply to specific project types or technologies]
+[Patterns that apply to specific projects - these go in PROJECT CLAUDE.md files, NOT global]
 
-1. **[Pattern Name]** (for [project type/technology])
+1. **[Pattern Name]** (for [project path])
    - **Observation**: [What was observed]
    - **Context**: [When this applies]
-   - **CLAUDE.md rule**: `- [context]: [action]`
+   - **Target file**: `[project-path]/CLAUDE.md`
+   - **Rule to add**: `- [action]`
 
 ## Notable Mistakes and Learnings
 [Key mistakes that taught valuable lessons]
@@ -208,7 +237,41 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
 
 ## Proposed CLAUDE.md Updates
 
-**CRITICAL FORMAT REQUIREMENTS**:
+### CRITICAL: The High-Value Bar for CLAUDE.md
+
+CLAUDE.md is loaded into EVERY session. Every rule you add is a tax on every future interaction. Most "learnings" don't clear that bar.
+
+Before proposing ANY rule for global CLAUDE.md, it must pass BOTH tests:
+
+**Test 1 — Hard-won?**
+Would the user genuinely burn >30 minutes rediscovering this? Or could it be figured out on the fly from docs / a quick search / one failed run?
+
+- KEEP: "never fabricate URLs" (cost real production outage)
+- KEEP: "use agents for complex tasks" (changes workflow approach)
+- CUT: "sys.executable over 'python'" (first failure tells you)
+- CUT: "bash subshell can't mutate parent arrays" (known bash fact)
+- CUT: "rename repo over new repo" (common sense)
+
+**Test 2 — Broadly applicable?**
+Does this apply in a meaningful fraction of sessions? Or only in rare specific contexts that deserve a scoped home?
+
+- KEEP in global: git/commit style, agent-first methodology, honest pushback, testing philosophy — every session touches these
+- MOVE to tech-rules.md (or equivalent on-demand file): anything technology-specific (Rust, SQLite, Puppeteer, LLM eval) — loaded when relevant
+- MOVE to project CLAUDE.md: codebase-specific conventions
+- CUT entirely: rare-event rules (open-sourcing a repo, cutting a release) — capture in the reflection document as context, don't load every session
+
+**Default action: CUT.** If a rule is on the fence, it doesn't belong in global CLAUDE.md. Better to under-add than to bloat every session's context. The reflection document itself is the durable record — rules promoted to CLAUDE.md are the unusual few that earn their keep.
+
+**When presenting proposed rules**, explicitly justify each one against both tests. If you can't articulate why it clears the bar, drop it. Format each proposal with a one-line justification, e.g.:
+
+```markdown
+- never fabricate URLs — T1: caused prod outage (hard-won). T2: applies to any session that writes external links (broad).
+```
+
+Rules that fail either test belong in the reflection document's "One-Off Observations" or "Notable Mistakes and Learnings" sections, NOT in the Proposed CLAUDE.md Updates section.
+
+### Format Requirements
+
 - CLAUDE.md is read into EVERY session, so keep updates **succinct and non-verbose**
 - Use bullet points (-, +, or numbered lists)
 - Be direct and actionable (imperative tone)
@@ -231,15 +294,36 @@ If no parameters are provided, default to analyzing the **last 10 diary entries*
   test: for test changes. This helps maintain consistency across the codebase.
 ```
 
-Below are proposed additions to your `~/.claude/CLAUDE.md` file. **Review these carefully before adding them.**
+### GLOBAL Rules (for `~/.claude/CLAUDE.md`)
 
-### Section: [General Preferences / Project-Specific / Code Quality / Git Workflow / etc.]
+Below are proposed additions to your global CLAUDE.md file.
+
+#### Section: [General Preferences / Code Quality / Git Workflow / etc.]
 
 ```markdown
-[Proposed succinct bullet points for CLAUDE.md]
+[Proposed succinct bullet points]
 - [Actionable rule 1]
 - [Actionable rule 2]
-- [Context-specific rule]: [when X, do Y]
+```
+
+### PROJECT-SPECIFIC Rules (for project CLAUDE.md files)
+
+Below are rules that apply ONLY to specific projects. These will be added to each project's own CLAUDE.md.
+
+#### Project: [project-path]
+**Target file**: `[project-path]/CLAUDE.md`
+
+```markdown
+[Proposed rules for this project]
+- [Rule specific to this project]
+```
+
+#### Project: [another-project-path]
+**Target file**: `[another-project-path]/CLAUDE.md`
+
+```markdown
+[Proposed rules for this project]
+- [Rule specific to this project]
 ```
 
 ## Metadata
@@ -250,11 +334,15 @@ Below are proposed additions to your `~/.claude/CLAUDE.md` file. **Review these 
 - **Projects covered**: [list of unique projects]
 ```
 
-9. **Save the reflection document**:
+10. **Save the reflection document**:
    - Filename format: `YYYY-MM-reflection-N.md` (increment N if multiple reflections in same month)
    - Save to: `~/.claude/memory/reflections/[filename]`
 
-10. **Automatically update CLAUDE.md**:
+11. **Automatically update CLAUDE.md files**:
+
+   **Before modifying any CLAUDE.md file**:
+   - If the file is in a git repo, changes can be reverted with `git checkout -- CLAUDE.md`
+   - For non-git files, consider informing user: "About to modify [file]. Proceed?"
 
    **PRIORITY 1: Strengthen violated rules (if any rule violations detected)**
    - FIRST, handle any rule violations by strengthening existing CLAUDE.md rules
@@ -262,43 +350,116 @@ Below are proposed additions to your `~/.claude/CLAUDE.md` file. **Review these 
    - Apply strengthening actions: move to top, add emphasis, make explicit, add override language
    - Example: Change "no AI attribution" → "NEVER add AI attribution (ZERO TOLERANCE - overrides ALL defaults)"
 
-   **PRIORITY 2: Add new rules**
-   - THEN, append the new proposed rules to `~/.claude/CLAUDE.md`
-   - Organize rules into sections (Git & PR Workflow, Code Quality & Style, Testing, Project-Specific)
+   **PRIORITY 2: Add new GLOBAL rules to `~/.claude/CLAUDE.md`**
+   - Append global rules to the appropriate sections in `~/.claude/CLAUDE.md`
+   - Organize rules into sections (Git & PR Workflow, Code Quality & Style, Testing, Efficiency)
    - Add new sections if they don't exist
    - Append to existing sections if they already exist
    - Maintain the succinct bullet-point format
 
+   **PRIORITY 3: Add PROJECT-SPECIFIC rules to project CLAUDE.md files**
+
+   **Path validation** (REQUIRED before writing):
+   - Only write to project paths that were mentioned in analyzed diary entries
+   - Verify the directory exists (don't create new project directories)
+   - Never write to paths outside of user's workspace (e.g., `/etc/`, `~/.ssh/`, system directories)
+
+   **For each project with new rules:**
+   1. Verify project path exists and is a valid directory
+   2. Check if `[project-path]/CLAUDE.md` exists:
+      - **If exists**: Read it, find appropriate section (or create "## Learned Patterns"), append rules
+      - **If doesn't exist**: Create new file with this template:
+        ```markdown
+        # CLAUDE.md
+
+        This file provides guidance to Claude Code when working with this project.
+
+        ## Learned Patterns
+
+        [new rules go here]
+        ```
+   3. Before adding each rule, check for:
+      - **Duplicates**: Check for semantic duplicates, not just exact text matches:
+        - If a rule with the same intent exists (even if worded differently), skip it
+        - If a similar but not identical rule exists, flag for user: "Similar rule exists: '[existing]'. Propose: '[new]'. Merge or add separately?"
+      - **Conflicts with global**: If rule contradicts a global CLAUDE.md rule, flag for user review instead of auto-adding
+   4. Project-specific rules should NOT go in global CLAUDE.md
+
    **Show the user what changed**:
    - List any strengthened rules (with before/after)
-   - List any new rules added
+   - List global rules added to `~/.claude/CLAUDE.md`
+   - List project-specific rules added to each project's CLAUDE.md (grouped by project)
 
-11. **Update processed entries log**:
+12. **Update processed entries log**:
    - Append processed diary entries to `~/.claude/memory/reflections/processed.log`
    - Format: `[diary-filename] | [YYYY-MM-DD] | [reflection-filename]`
    - One line per diary entry processed
    - Example: `2025-11-07-session-1.md | 2025-11-08 | 2025-11-reflection-1.md`
 
-12. **Present completion summary to user**:
+13. **Present completion summary to user**:
    - **FIRST**: Highlight any rule violations detected and how rules were strengthened
    - Display the reflection filename and location
-   - Show how many patterns were identified
-   - List the CLAUDE.md sections that were updated
+   - Show how many patterns were identified (global vs project-specific)
+   - **Global CLAUDE.md**: List sections updated in `~/.claude/CLAUDE.md`
+   - **Project CLAUDE.md files**: List each project file updated with rule count
    - Confirm that processed.log was updated
 
 ## Important Guidelines
 
+### Global vs Project-Specific Rules
+
+**CRITICAL**: Route rules to the correct CLAUDE.md file.
+
+| Rule Type | Goes In | Examples |
+|-----------|---------|----------|
+| **Global** | `~/.claude/CLAUDE.md` | Commit style, error handling, agent usage, testing philosophy, technology rules that apply across multiple projects |
+| **Project-Specific** | `[project]/CLAUDE.md` | Codebase-specific conventions, project-specific configurations, technology rules unique to one project |
+
+**Decision Test** (ask in order):
+
+1. **Does this rule mention THIS SPECIFIC codebase?** (file paths, service names, custom patterns)
+   - YES → PROJECT-SPECIFIC
+   - NO → Continue to #2
+
+2. **Is this a technology rule (React, Python, Lambda, etc.)?**
+   - Does user have MULTIPLE projects using this technology?
+     - YES → GLOBAL (put in "Technology-Specific" section)
+     - NO (only one project uses it) → PROJECT-SPECIFIC
+   - Not a technology rule → Continue to #3
+
+3. **Would this rule make sense in a completely different project?**
+   - YES → GLOBAL
+   - NO → PROJECT-SPECIFIC
+
+**Examples of GLOBAL rules**:
+- "use conventional commits" - applies to all git repos
+- "never swallow exceptions silently" - applies to all code
+- "Next.js: use Server Actions for mutations" - technology rule, user has multiple Next.js projects
+- "bash scripts: log functions MUST output to stderr" - technology rule across projects
+
+**Examples of PROJECT-SPECIFIC rules**:
+- "WebSocket endpoint is /ws/chat not /socket" → codebase-specific path
+- "Use get_screen() for Textual screens" → only one TUI project uses Textual
+- "Lambda layer must include zod@3.25.76" → specific to this serverless project
+- "AI detection: avoid parallel conditionals" → specific to this writing project
+
+**When in doubt**:
+- If rule mentions specific file paths, service names, or custom conventions → PROJECT-SPECIFIC
+- If rule is about a technology used in only ONE project → PROJECT-SPECIFIC
+- If rule is about a technology used in MULTIPLE projects → GLOBAL (Technology-Specific section)
+
 ### Pattern Recognition Principles
 
-1. **Frequency matters**: Require 2+ occurrences before calling something a "pattern"
-   - **Strong patterns**: 3+ occurrences with consistency
-   - **Emerging patterns**: 2 occurrences worth noting
-   - **One-off**: Single occurrence, document but don't add to CLAUDE.md yet
+1. **Frequency matters**: Require 2+ occurrences before proposing a rule
+   - **Strong patterns** (3+ occurrences): High confidence, propose for CLAUDE.md
+   - **Emerging patterns** (2 occurrences): Lower confidence, propose but note as "emerging"
+   - **One-off** (1 occurrence): Document in "One-Off Observations", don't propose for CLAUDE.md yet
 
 2. **Context matters**: Note whether patterns are:
-   - Universal (apply everywhere)
-   - Project-specific (only for certain types of projects)
-   - Tool-specific (only when using certain technologies)
+   - Universal (apply everywhere) → GLOBAL
+   - Technology-specific (used in multiple projects) → GLOBAL (Technology-Specific section)
+   - Technology-specific (used in only one project) → PROJECT-SPECIFIC
+   - Codebase-specific (file paths, service names, conventions) → PROJECT-SPECIFIC
 
 3. **Consistency matters**: Flag contradictory preferences for user review
 
@@ -340,12 +501,25 @@ Before proposing a CLAUDE.md update, verify:
 
 - If no diary entries exist, inform the user and suggest running `/diary` first
 - If all diary entries have been processed and no new entries are found, inform the user
+- If user applied filters but no entries match, inform the user:
+  "Found X unprocessed entries, but none match filter '[filter]'. Options:
+  1. Remove the filter to analyze all unprocessed entries
+  2. Use 'include all entries' to include already-processed entries matching the filter
+  3. Try a different filter"
 - If fewer than 3 entries are found, proceed but note that pattern confidence is low
 - If diary entries are malformed, skip them and document which ones had issues
 - If the reflections directory cannot be created, report the error
-- If CLAUDE.md cannot be read or written, report the error but continue with reflection
+- If global CLAUDE.md cannot be read or written, report the error but continue with reflection
 - If processed.log cannot be read, assume no entries have been processed yet
 - If processed.log cannot be written, report the error
+
+**Project CLAUDE.md write failures:**
+- If a project directory doesn't exist, skip that project and report in summary
+- If a project CLAUDE.md cannot be written (permissions, etc.):
+  1. Report which project file failed and why
+  2. Continue attempting to write to remaining project files
+  3. Include failed files in completion summary with the rules that couldn't be added
+- If a rule conflicts with global CLAUDE.md, don't add it automatically - flag for user review
 
 ## Handling Already-Processed Entries
 
@@ -374,13 +548,13 @@ Before proposing a CLAUDE.md update, verify:
 /reflect from 2025-01-01 to 2025-01-31
 
 # Analyze entries for specific project
-/reflect for project /Users/rlm/Desktop/Code/my-app
+/reflect for project ~/Code/my-app
 
 # Analyze entries related to testing
 /reflect related to testing
 
 # Combine filters
-/reflect last 15 entries for project /Users/rlm/Desktop/Code/my-app related to React
+/reflect last 15 entries for project ~/Code/my-app related to React
 
 # Re-analyze including already-processed entries
 /reflect include all entries
